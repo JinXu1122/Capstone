@@ -9,6 +9,13 @@ class Comment extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'idea_id',
+        'content'
+        // Other fillable attributes, if any
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }
