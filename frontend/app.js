@@ -336,6 +336,10 @@ const app = Vue.createApp({
         this.commentsCounts[newIdea.id] = commentsCount;
         this.upvotesCounts[newIdea.id] = upvotesCount;
 
+        // Clear input fields after idea is stored
+        this.ideaForm.title = '';
+        this.ideaForm.content = '';
+
       } catch (error) {
         console.log(error);
       }
