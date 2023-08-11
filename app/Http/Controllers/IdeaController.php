@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
 use App\Models\Idea;
+use App\Models\Upvote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class IdeaController extends Controller
 {
@@ -12,7 +17,18 @@ class IdeaController extends Controller
      */
     public function index()
     {
-        //
+        $ideas = Idea::withCount('upvotes', 'comments')->get();
+
+        return Inertia::render('Ideas/Index', [
+            'ideas' => $ideas,
+            'auth' => Auth::check() ? [
+                'user' => [
+                    'id' => auth()->id(),
+                    'name' => auth()->user()->name,
+                ],
+                'token' => session()->get('token'),
+            ] : null
+        ]);
     }
 
     /**
@@ -28,7 +44,50 @@ class IdeaController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'title' => ['required', 'max:255'],
+            'content' => ['required'],
+        ]);
+    
+        // Create a new idea associated with the logged-in user
+        $idea = new Idea([
+            'title' => $validatedData['title'],
+            'content' => $validatedData['content']
+        ]);
+
+        $request->user()->ideas()->save($idea);
+
+        return redirect(route('ideas.index'));
+        
+    }
+
+    public function upvote(Idea $idea)
+    {
+        // Create and save a new Upvote
+        $upvote = new Upvote([
+            'user_id' => auth()->id(),
+        ]);
+
+        $idea->upvotes()->save($upvote);
+
+        return back();
+    }
+
+    public function addComment(Request $request, Idea $idea)
+    {
+        $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        // Create and associate the comment with the idea
+        $comment = new Comment([
+            'user_id' => auth()->id(),
+            'content' => $request->input('content')
+        ]);
+
+        $idea->comments()->save($comment);
+
+        //return back()->with('success', 'Comment added successfully.');
     }
 
     /**
@@ -36,7 +95,7 @@ class IdeaController extends Controller
      */
     public function show(Idea $idea)
     {
-        //
+        return response()->json($idea, 200);
     }
 
     /**
@@ -52,7 +111,16 @@ class IdeaController extends Controller
      */
     public function update(Request $request, Idea $idea)
     {
-        //
+        // Validate the incoming request data
+        $request->validate([
+            'title' => ['required', 'max:255'],
+            'content' => ['required'],
+        ]);
+
+        $idea->title = $request->input('title');
+        $idea->content = $request->input('content');
+
+        $idea->save();
     }
 
     /**
@@ -60,6 +128,6 @@ class IdeaController extends Controller
      */
     public function destroy(Idea $idea)
     {
-        //
+        $idea->delete();
     }
 }

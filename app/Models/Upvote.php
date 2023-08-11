@@ -9,6 +9,12 @@ class Upvote extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'idea_id'
+        // Other fillable attributes, if any
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }
