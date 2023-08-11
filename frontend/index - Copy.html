@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capstone</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://unpkg.com/vue@3"></script>
+</head>
+
+<body>
+
+  <div id="app" class="container">
+    <div class="row p-5 d-flex justify-content-between align-items-center">
+      <div class="col">
+        <h1 class="display-4">{{ title }}</h1>
+      </div>
+      <div class="col text-end">
+        <!-- Show the New Idea button and Logout button if the user is logged in -->
+        <template v-if="token">
+          <button class="btn btn-outline-secondary me-3" @click="showNewIdea = true">&plus;</button>
+          <button class="btn btn-outline-secondary" @click="logout">Logout</button>
+        </template>
+
+        <!-- Show the Login button if the user is not logged in -->
+        <template v-else>
+          <button class="btn btn-outline-secondary" @click="showLogin = true">Login</button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Display notes if user is logged in -->
+    <div class="row">
+      <div class="col-12 col-xl-6 p-3" v-for="idea in ideas">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between p-3">
+            <h4 class="">{{ idea.title }}</h4>
+            <div class="d-flex align-items-center">
+              <!-- Logged-in user can only edit or delete their own posted ideas -->
+              <template v-if="token && idea.user_id === user.id">
+                <button class="btn btn-outline-secondary me-3" @click="editIdea(idea)">Edit</button>
+                <button class="btn btn-outline-danger" @click="deleteIdea(idea)">Delete</button>
+              </template>
+
+              <!-- Any user can upvote or add comments to any idea -->
+              <template v-if="token">
+                <button class="btn btn-outline-secondary me-3" @click="upvoteIdea(idea)">Upvote</button>
+                <button class="btn btn-outline-secondary" @click="showNewComment = true">Comment</button>
+              </template>
+              
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-text">{{ idea.content }}</p>
+             <!-- Show the number of upvotes andcomments for both logged-in and unlogged-in users -->
+            <p>Upvotes: {{ idea.upvotes }}</p>     
+            <p>Comments: {{ idea.comments }}</p>
+          </div>
+        </div>
+      </div>
+    </div>   
+
+    <!-- New Idea Modal and Form -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showNewNote}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">New Note</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showNewNote = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addNote">
+              <div class="form-group mb-3">
+                <label class="form-label" for="title">
+                  Title
+                </label>
+                <input type="text" id="title" class="form-control" v-model="noteForm.title">
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label" for="content">Content</label>
+                <textarea id="content" class="form-control" v-model="noteForm.content"></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Add Note</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Idea Modal and Form -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showEditNote}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Note</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showEditNote = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updateNote">
+              <div class="form-group mb-3">
+                <label class="form-label" for="title">
+                  Title
+                </label>
+                <input type="text" id="title" class="form-control" v-model="editForm.title">
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label" for="content">Content</label>
+                <textarea id="content" class="form-control" v-model="editForm.content"></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Update Note</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+
+</html>

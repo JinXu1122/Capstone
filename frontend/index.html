@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Idea Forum</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://unpkg.com/vue@3"></script>
+
+  <style>
+    .orange-border {
+      border-color: orange;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div id="app" class="container">
+    <div class="row p-5 d-flex justify-content-between align-items-center">
+      <div class="col">
+        <h1 class="display-4">
+          <img src="./images/IDEA-Forum-Logo.png" alt="Logo" width="150" height="50" class="me-2">
+        </h1>
+      </div>
+      <div class="col text-end">
+        <template v-if="token">
+          <button class="btn btn-outline-secondary me-3" @click="showNewIdea = true">&plus;</button>
+          <button class="btn btn-outline-secondary" @click="logout">Logout</button>
+        </template>
+        <template v-else>         
+            <button class="btn btn-outline-secondary me-3" @click="showReg = true">Register</button>
+            <button class="btn btn-outline-secondary" @click="showLogin = true">Login</button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Display ideas -->
+    <div class="row">
+      <div class="col-12 col-xl-6 p-3" v-for="idea, index in ideas">
+        <div class="card orange-border">
+          <div class="card-header d-flex justify-content-between p-3">
+            <h4 class="">{{ idea.title }}</h4>
+            <div class="d-flex align-items-center">
+              <!-- Logged-in user can only edit or delete their own posted ideas -->
+              <template v-if="token && idea.user_id === user.id">
+                <!-- <button class="btn btn-outline-secondary me-3" @click="editIdea(idea)">Edit</button> -->
+                <!-- <button class="btn btn-outline-danger me-3" @click="deleteIdea(idea)">Delete</button> -->
+                <a href="#" @click.prevent="editIdea(idea)">
+                  <img src="./images/Edit-icon.png" alt="Edit" width="24" height="24">
+                </a>
+                <a href="#" @click.prevent="deleteIdea(idea)">
+                  <img src="./images/delete-icon-png.jpg" alt="Delete" width="24" height="24">
+                </a>
+              </template>
+              <!-- Any user can upvote or add comments to any idea -->
+              <template v-if="token">
+                <!-- <button class="btn btn-outline-secondary me-3" @click="upvoteIdea(idea)">Upvote</button> -->
+                <a href="#" @click.prevent="upvoteIdea(idea)">
+                  <img src="./images/thumbs-up-icon.png" alt="Upvote" width="24" height="24">
+                </a>
+                {{ upvotesCounts[idea.id] }}
+                <!-- <button class="btn btn-outline-secondary" @click="showNewComment = true">Comment</button> -->
+                <a href="#" @click.prevent="newComment(idea)">
+                  <img src="./images/comment-icon.png" alt="Comment" width="24" height="24">
+                </a>
+                {{ commentsCounts[idea.id] }}
+              </template>
+              <template v-else>
+                <img src="./images/thumbs-up-icon.png" alt="Upvote" width="24" height="24">
+                {{ upvotesCounts[idea.id] }}
+                <img src="./images/comment-icon.png" alt="Comment" width="24" height="24">
+                {{ commentsCounts[idea.id] }}
+              </template>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-text">{{ idea.content }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Display login if user is not logged in -->
+    <!-- <div class="row" v-else>
+        <div class="col col-md-6 offset-md-3">
+          <form class="form bg-light border border-1 p-5" @submit.prevent="login">
+            <div class="form-group mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input id="email" type="email" class="form-control" v-model="loginForm.email">
+            </div>
+            <div class="form-group mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input id="password" type="password" class="form-control" v-model="loginForm.password">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Log in</button>
+          </form>
+        </div>
+      </div> -->
+
+    <!-- Register Modal -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showReg}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Register</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showReg = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="register">
+              <div class="form-group mb-3">
+                <label class="form-label" for="name">Name</label>
+                <input type="text" id="regName" class="form-control" v-model="regForm.name">
+                <small v-if="regErrs.name" class="text-danger">{{ regErrs.name }}</small>
+              </div>
+              <div class="form-group mb-3">
+                <label class="form-label" for="email">Email</label>
+                <input type="text" id="regEmail" class="form-control" v-model="regForm.email">
+                <small v-if="regErrs.email" class="text-danger">{{ regErrs.email }}</small>
+              </div>
+              <div class="form-group mb-3">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="regPassword" class="form-control" v-model="regForm.password">
+                <small v-if="regErrs.password" class="text-danger">{{ regErrs.password }}</small>
+              </div>
+              <div class="form-group mb-3">
+                <label class="form-label" for="password_confrm">Password Confirmation</label>
+                <input type="password" id="regPasswordConfrm" class="form-control" v-model="regForm.password_confirmation">
+                <small v-if="regErrs.password_confirmation" class="text-danger">{{ regErrs.password_confirmation }}</small>
+              </div>
+              <button type="submit" class="btn btn-primary">Register</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showLogin}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">login</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showLogin = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="login">
+              <div class="form-group mb-3">
+                <label class="form-label" for="email">Email</label>
+                <input type="text" id="logEmail" class="form-control" v-model="loginForm.email">
+                <small v-if="logErrs.email" class="text-danger">{{ logErrs.email }}</small>
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="logPassword" class="form-control" v-model="loginForm.password">
+                <small v-if="logErrs.password" class="text-danger">{{ logErrs.password }}</small>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Log in</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Idea Modal and Form -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showNewIdea}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">New Idea</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showNewIdea = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addIdea">
+              <div class="form-group mb-3">
+                <label class="form-label" for="title">
+                  Title
+                </label>
+                <input type="text" id="newIdea_title" class="form-control" v-model="ideaForm.title">
+                <small v-if="newIdeaErrs.title" class="text-danger">{{ newIdeaErrs.title }}</small>
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label" for="content">Content</label>
+                <textarea id="newIdea_content" class="form-control" v-model="ideaForm.content"></textarea>
+                <small v-if="newIdeaErrs.content" class="text-danger">{{ newIdeaErrs.content }}</small>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Add Idea</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Idea Modal and Form -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showEditIdea}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Idea</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showEditIdea = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updateIdea">
+              <div class="form-group mb-3">
+                <label class="form-label" for="title">
+                  Title
+                </label>
+                <input type="text" id="editIdea_title" class="form-control" v-model="editForm.title">
+                <small v-if="editIdeaErrs.title" class="text-danger">{{ editIdeaErrs.title }}</small>
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label" for="content">Content</label>
+                <textarea id="editIdea_content" class="form-control" v-model="editForm.content"></textarea>
+                <small v-if="editIdeaErrs.content" class="text-danger">{{ editIdeaErrs.content }}</small>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Update Idea</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Comment Modal and Form -->
+    <div class="modal" tabindex="-1" :class="{'d-block pt-5 show bg-dark bg-opacity-75': showNewComment}">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">New Comment</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="showNewComment = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addComment">
+              <div class="form-group mb-3">
+                <label class="form-label" for="title">
+                  Title: {{ commentTitle }}
+                </label>
+              </div>
+              <div class="form-group mb-3">
+                <label class="form-label" for="content">Content</label>
+                <textarea id="newComment_content" class="form-control" v-model="commentForm.content"></textarea>
+                <small v-if="commentErrs.content" class="text-danger">{{ commentErrs.content }}</small>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Add Comment</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+
+</html>
