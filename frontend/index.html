@@ -66,7 +66,12 @@
                 <a href="#" @click.prevent="newComment(idea)">
                   <img src="./images/comment-icon.png" alt="Comment" width="24" height="24">
                 </a>
-                {{ commentsCounts[idea.id] }}
+                <a v-if="commentsCounts[idea.id] > 0" href="#" @click.prevent="toggleComments(idea.id)">
+                  {{ commentsCounts[idea.id] }}
+                </a>
+                <span v-else>
+                  {{ commentsCounts[idea.id] }}
+                </span>                
               </template>
               <template v-else>
                 <img src="./images/thumbs-up-icon.png" alt="Upvote" width="24" height="24">
@@ -74,10 +79,20 @@
                 <img src="./images/comment-icon.png" alt="Comment" width="24" height="24">
                 {{ commentsCounts[idea.id] }}
               </template>
-            </div>
+            </div>           
           </div>
           <div class="card-body">
             <p class="card-text">{{ idea.content }}</p>
+            <template v-if="idea.showComments">
+              <div class="comments-list">
+                <h6>Comments:</h6>
+                <ul>
+                  <li v-for="comment in comments[idea.id]" :key="comment.id">
+                    {{ comment.content }}
+                  </li>
+                </ul>
+              </div>
+            </template>
           </div>
         </div>
       </div>

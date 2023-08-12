@@ -7,6 +7,7 @@ const app = Vue.createApp({
       token: '',
       user: {},
       ideas: [],
+      comments: {}, 
       editIdeaId: -1,
       commentIdeaId: -1,
       commentTitle: '',
@@ -60,6 +61,21 @@ const app = Vue.createApp({
 
   },
   methods: {   
+    toggleComments: async function (ideaId) {
+      const idea = this.ideas.find(idea => idea.id === ideaId);
+
+      // Fetch comments for the idea
+      const response = await fetch(`${baseUrl}/api/ideas/${idea.id}/comments`, {
+        method: 'get',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      const comments = await response.json();
+      this.comments[idea.id] = comments;
+
+      idea.showComments = !idea.showComments;
+    },
     validateForm: function (form, inputFields) {    
       this.regErrs = {};  
       this.logErrs = {};
@@ -276,7 +292,7 @@ const app = Vue.createApp({
       }
     },
     getCommentsCount: async function (idea) {
-      try {
+      try {       
         // Fetch comments count for the idea
         const commentsResponse = await fetch(`${baseUrl}/api/ideas/${idea.id}/comments`, {
           method: 'get',
@@ -463,12 +479,18 @@ const app = Vue.createApp({
         });
 
         const addedComment = await response.json();
-        console.log(addedComment);
-
-        this.showNewComment = false;
 
         // Update the comments count for the idea
-        this.commentsCounts[this.commentIdeaId]++;
+        this.commentsCounts[this.commentIdeaId]++;  
+
+        // Update the comments array for the specific idea
+        if (!this.comments[this.commentIdeaId]) {
+          this.comments[this.commentIdeaId] = [];
+        }
+        this.comments[this.commentIdeaId].push(addedComment);                
+
+        this.commentForm.content = '';
+        this.showNewComment = false;           
 
       } catch (error) {
         console.log(error)
