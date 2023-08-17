@@ -1,4 +1,4 @@
-## About this project: Idea Forum
+## Idea Forum Web Application
 
 This is a full-stack web application aimed to implement requirements as: 
 
